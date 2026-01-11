@@ -1,10 +1,10 @@
 package com.HomeHarbour.HomeHarbourApp.service;
 
-import com.HomeHarbour.HomeHarbourApp.dto.HotelDto;
-import com.HomeHarbour.HomeHarbourApp.dto.HotelPriceDto;
-import com.HomeHarbour.HomeHarbourApp.dto.HotelSearchRequest;
+import com.HomeHarbour.HomeHarbourApp.dto.*;
 import com.HomeHarbour.HomeHarbourApp.entity.Room;
 import org.springframework.data.domain.Page;
+
+import java.util.List;
 
 public interface InventoryService {
 
@@ -13,4 +13,8 @@ public interface InventoryService {
 
 
     Page<HotelPriceDto> searchHotels(HotelSearchRequest  hotelSearchRequest);
+
+    List<InventoryDto> getAllInventoryByRoom(Long roomId);
+
+    void updateInventory(Long roomId, UpdateInventoryRequestDto updateInventoryRequestDto);
 }

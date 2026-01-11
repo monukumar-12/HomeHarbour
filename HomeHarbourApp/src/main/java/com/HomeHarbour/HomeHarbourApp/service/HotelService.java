@@ -3,6 +3,8 @@ package com.HomeHarbour.HomeHarbourApp.service;
 import com.HomeHarbour.HomeHarbourApp.dto.HotelDto;
 import com.HomeHarbour.HomeHarbourApp.dto.HotelInfoDto;
 
+import java.util.List;
+
 public interface HotelService {
 
     HotelDto createNewHotel (HotelDto hotelDto);
@@ -17,4 +19,5 @@ public interface HotelService {
 
     HotelInfoDto getHotelInfoById(Long hotelId);
 
+    List<HotelDto> getAllHotels();
 }

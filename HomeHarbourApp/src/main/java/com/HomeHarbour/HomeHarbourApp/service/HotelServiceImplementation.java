@@ -17,6 +17,9 @@ import org.modelmapper.ModelMapper;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.HomeHarbour.HomeHarbourApp.util.AppUtils.getCurrentUser;
 
 @Service
 @Slf4j
@@ -53,9 +56,10 @@ public class HotelServiceImplementation implements HotelService{
 
         User user =(User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        if(user.equals(hotel.getOwner())){
+        if(!user.equals(hotel.getOwner())){
             throw new UnAuthorisedException("This user does not own this hotel with id: "+ id);
         }
+
 
         return modelMapper.map(hotel,HotelDto.class);
     }
@@ -68,7 +72,7 @@ public class HotelServiceImplementation implements HotelService{
 
         User user =(User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        if(user.equals(hotel.getOwner())){
+        if(!user.equals(hotel.getOwner())){
             throw new UnAuthorisedException("This user does not own this hotel with id: "+ id);
         }
 
@@ -89,7 +93,7 @@ public class HotelServiceImplementation implements HotelService{
 
         User user =(User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        if(user.equals(hotel.getOwner())){
+        if(!user.equals(hotel.getOwner())){
             throw new UnAuthorisedException("This user does not own this hotel with id: "+ id);
         }
 
@@ -111,7 +115,7 @@ public class HotelServiceImplementation implements HotelService{
 
         User user =(User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        if(user.equals(hotel.getOwner())){
+        if(!user.equals(hotel.getOwner())){
             throw new UnAuthorisedException("This user does not own this hotel with id: "+ hotelId);
         }
 
@@ -138,5 +142,17 @@ public class HotelServiceImplementation implements HotelService{
                 .toList();
 
         return new HotelInfoDto(modelMapper.map(hotel, HotelDto.class), rooms);
+    }
+
+    @Override
+    public List<HotelDto> getAllHotels() {
+        User user = getCurrentUser();
+        log.info("Getting all hotels for the admin user with ID: {}", user.getId());
+        List<Hotel> hotels = hotelRepository.findByOwner(user);
+
+        return hotels
+                .stream()
+                .map((element) -> modelMapper.map(element, HotelDto.class))
+                .collect(Collectors.toList());
     }
 }

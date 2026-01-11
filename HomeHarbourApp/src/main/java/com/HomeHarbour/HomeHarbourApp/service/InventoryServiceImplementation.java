@@ -1,13 +1,15 @@
 package com.HomeHarbour.HomeHarbourApp.service;
 
-import com.HomeHarbour.HomeHarbourApp.dto.HotelDto;
-import com.HomeHarbour.HomeHarbourApp.dto.HotelPriceDto;
-import com.HomeHarbour.HomeHarbourApp.dto.HotelSearchRequest;
+import com.HomeHarbour.HomeHarbourApp.dto.*;
 import com.HomeHarbour.HomeHarbourApp.entity.Hotel;
 import com.HomeHarbour.HomeHarbourApp.entity.Inventory;
 import com.HomeHarbour.HomeHarbourApp.entity.Room;
+import com.HomeHarbour.HomeHarbourApp.entity.User;
+import com.HomeHarbour.HomeHarbourApp.exception.ResourceNotFoundException;
 import com.HomeHarbour.HomeHarbourApp.repository.HotelMinPriceRepository;
 import com.HomeHarbour.HomeHarbourApp.repository.InventoryRepository;
+import com.HomeHarbour.HomeHarbourApp.repository.RoomRepository;
+import jakarta.transaction.Transactional;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,11 +17,17 @@ import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.HomeHarbour.HomeHarbourApp.util.AppUtils.getCurrentUser;
+import static org.hibernate.query.sqm.tree.SqmNode.log;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +35,8 @@ import java.time.temporal.ChronoUnit;
 
 public class InventoryServiceImplementation implements InventoryService{
 
+
+    private final RoomRepository roomRepository;
     private final ModelMapper modelMapper;
      private final InventoryRepository inventoryRepository;
     private final HotelMinPriceRepository hotelMinPriceRepository;
@@ -77,5 +87,40 @@ public class InventoryServiceImplementation implements InventoryService{
 
 
         return hotelPage;
+    }
+
+    @Override
+    public List<InventoryDto> getAllInventoryByRoom(Long roomId) {
+        log.info("Getting All inventory by room for room with id: {}", roomId);
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found with id: "+roomId));
+
+        User user = getCurrentUser();
+        if(!user.equals(room.getHotel().getOwner())) throw new AccessDeniedException("You are not the owner of room with id: "+roomId);
+
+        return inventoryRepository.findByRoomOrderByDate(room).stream()
+                .map((element) -> modelMapper.map(element,
+                        InventoryDto.class))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void updateInventory(Long roomId, UpdateInventoryRequestDto updateInventoryRequestDto) {
+        log.info("Updating All inventory by room for room with id: {} between date range: {} - {}", roomId,
+                updateInventoryRequestDto.getStartDate(), updateInventoryRequestDto.getEndDate());
+
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found with id: "+roomId));
+
+        User user = getCurrentUser();
+        if(!user.equals(room.getHotel().getOwner())) throw new AccessDeniedException("You are not the owner of room with id: "+roomId);
+
+        inventoryRepository.getInventoryAndLockBeforeUpdate(roomId, updateInventoryRequestDto.getStartDate(),
+                updateInventoryRequestDto.getEndDate());
+
+        inventoryRepository.updateInventory(roomId, updateInventoryRequestDto.getStartDate(),
+                updateInventoryRequestDto.getEndDate(), updateInventoryRequestDto.getClosed(),
+                updateInventoryRequestDto.getSurgeFactor());
     }
 }

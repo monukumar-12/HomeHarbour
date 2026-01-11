@@ -6,6 +6,7 @@ import com.HomeHarbour.HomeHarbourApp.dto.LoginResponseDto;
 import com.HomeHarbour.HomeHarbourApp.dto.SignupRequestDto;
 import com.HomeHarbour.HomeHarbourApp.dto.UserDto;
 import com.HomeHarbour.HomeHarbourApp.security.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,11 +33,13 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/signup")
+    @Operation(summary = "Create a new account", tags = {"Auth"})
     public ResponseEntity<UserDto> signup(@RequestBody SignupRequestDto signUpRequestDto) {
         return new ResponseEntity<>(authService.signUp(signUpRequestDto), HttpStatus.CREATED);
     }
 
     @PostMapping("/login")
+    @Operation(summary = "Login request", tags = {"Auth"})
     public ResponseEntity<LoginResponseDto> login(@RequestBody LoginDto loginDto, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
         String[] tokens = authService.login(loginDto);
 
@@ -48,6 +51,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
+    @Operation(summary = "Refresh the JWT with a refresh token", tags = {"Auth"})
     public ResponseEntity<LoginResponseDto> refresh(HttpServletRequest request) {
         String refreshToken = Arrays.stream(request.getCookies()).
                 filter(cookie -> "refreshToken".equals(cookie.getName()))
